@@ -25,7 +25,7 @@ public class PackageEntity {
     @PrimaryKeyJoinColumn
     private PackageDetails packageDetails;
 
-    public com.cms.entity.PackageDetails getPackageDetails() {
+    public PackageDetails getPackageDetails() {
         return packageDetails;
     }
 

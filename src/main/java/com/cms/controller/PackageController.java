@@ -14,6 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -31,17 +33,6 @@ public class PackageController {
 
     @PostMapping("/create")
     public ResponseEntity<String> create(@RequestBody PackageCreationRequest request) {
-        System.out.println(request.getAccountId());
-
-        System.out.println(request.getPackageEntity().getId());
-        System.out.println(request.getPackageDetails());
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            String requestBodyJson = objectMapper.writeValueAsString(request);
-            System.out.println("Request Body: " + requestBodyJson);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
         try {
             // Basic validation
             if (request == null || request.getPackageEntity() == null || request.getPackageDetails() == null) {
@@ -51,7 +42,6 @@ public class PackageController {
                 request.getPackageEntity().setStatus(PackageEntity.PackageStatus.BOOKED);
 
                 long accountId = request.getAccountId();
-//                long accountId = 1;
                 System.out.println("Account " + accountId);
                 Optional<Account> optionalAccount = accountRepository.findById(accountId);
                 System.out.println("Account " + optionalAccount);
@@ -86,14 +76,17 @@ public class PackageController {
     }
 
 
-    @PutMapping("/edit/{id}")
+    @PostMapping("/edit/{id}")
     public ResponseEntity<String> editPackageDetails(@PathVariable("id") Long id,@RequestBody PackageDetails updatedDetails){
+
         try {
+            if(id == null || updatedDetails == null){
+                return ResponseEntity.badRequest().body("Invalid Input Data");
+            }
             // Fetch the existing package details
             Optional<PackageDetails> optionalDetails = packageDetailsRepository.findById(id);
             if (optionalDetails.isPresent()) {
                 PackageDetails existingDetails = optionalDetails.get();
-
                 existingDetails.setSenderName(updatedDetails.getSenderName());
                 existingDetails.setSenderAddress(updatedDetails.getSenderAddress());
                 existingDetails.setSenderState(updatedDetails.getSenderState());
@@ -120,6 +113,46 @@ public class PackageController {
                     .body("An unexpected error occurred while updating package details");
         }
     }
+
+    @GetMapping("/delete/{id}")
+    public ResponseEntity<String> delete(@PathVariable("id") Long id){
+        try {
+            if(id == null){
+                return ResponseEntity.badRequest().body("Invalid Input Data");
+            }
+            System.out.println(id);
+            Optional<PackageEntity> deletePackage = packageRepository.findById(id);
+            packageRepository.deleteById(id);
+            if(deletePackage.isPresent()){
+                PackageEntity packageEntity = deletePackage.get();
+                if(packageEntity.getPackageDetails() != null){
+                    packageEntity.getPackageDetails().setPackageEntity(null);
+                    packageDetailsRepository.delete(packageEntity.getPackageDetails());
+                }
+                packageRepository.deleteById(id);
+                return ResponseEntity.ok("Package Deleted Successfully");
+            }
+            return ResponseEntity.ok("Package deleted successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred while deleting the package");
+        }
+    }
+
+    @GetMapping("/packages/{accountId}")
+    public ResponseEntity<List<PackageEntity>> getPackagesByAccountId(@PathVariable Long accountId) {
+        try {
+            List<PackageEntity> packages = packageRepository.findAllByAccountId(accountId);
+            if (packages.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(packages);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }
+
 
 

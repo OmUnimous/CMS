@@ -1,5 +1,6 @@
 package com.cms.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 
@@ -19,6 +20,7 @@ public class PackageDetails {
     @Column(name = "sender_mobile_number", columnDefinition = "BIGINT")
     private long senderMobileNumber;
 
+    @JsonIgnore
     @OneToOne
     @MapsId
     @JoinColumn(name = "package_id")

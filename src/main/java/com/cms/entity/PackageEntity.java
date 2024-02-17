@@ -21,7 +21,6 @@ public class PackageEntity {
     private Account account;
 
 
-
     @OneToOne(mappedBy ="packageEntity",cascade =  CascadeType.ALL)
     @PrimaryKeyJoinColumn
     private PackageDetails packageDetails;

@@ -1,10 +1,14 @@
 package com.cms.controller;
 
+import ch.qos.logback.core.CoreConstants;
+import com.cms.dao.AccountRepository;
 import com.cms.dao.PackageDetailsRepository;
 import com.cms.dao.PackageRepository;
 import com.cms.dto.PackageCreationRequest;
+import com.cms.entity.Account;
 import com.cms.entity.PackageDetails;
 import com.cms.entity.PackageEntity;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,38 +26,55 @@ public class PackageController {
     @Autowired
     private PackageDetailsRepository packageDetailsRepository;
 
+    @Autowired
+    private AccountRepository accountRepository;
+
     @PostMapping("/create")
     public ResponseEntity<String> create(@RequestBody PackageCreationRequest request) {
+        System.out.println(request.getAccountId());
+
+        System.out.println(request.getPackageEntity().getId());
+        System.out.println(request.getPackageDetails());
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String requestBodyJson = objectMapper.writeValueAsString(request);
+            System.out.println("Request Body: " + requestBodyJson);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         try {
             // Basic validation
             if (request == null || request.getPackageEntity() == null || request.getPackageDetails() == null) {
                 return ResponseEntity.badRequest().body("Invalid package data");
-            }
+            } else {
+                // Set package status to BOOKED
+                request.getPackageEntity().setStatus(PackageEntity.PackageStatus.BOOKED);
 
-            // Set package status to BOOKED
-            request.getPackageEntity().setStatus(PackageEntity.PackageStatus.BOOKED);
+                long accountId = request.getAccountId();
+//                long accountId = 1;
+                System.out.println("Account " + accountId);
+                Optional<Account> optionalAccount = accountRepository.findById(accountId);
+                System.out.println("Account " + optionalAccount);
+                if (optionalAccount.isPresent()) {
+                    Account account = optionalAccount.get();
 
+                     //Set account in PackageEntity
+                    request.getPackageEntity().setAccount(account);
 
-            // Save package and details
-            PackageEntity savedPackage = packageRepository.save(request.getPackageEntity());
+                    // Associate PackageEntity with PackageDetails
+                    PackageEntity packageEntity = request.getPackageEntity();
+                    PackageDetails packageDetails = request.getPackageDetails();
 
+                    packageEntity.setPackageDetails(packageDetails);
+                    packageDetails.setPackageEntity(packageEntity);
 
+                    // Save package and details together
+                    packageRepository.save(packageEntity);
 
-            if (savedPackage != null) {
-                savedPackage.setPackageDetails(request.getPackageDetails());
-                PackageDetails savedDetails = packageDetailsRepository.save(request.getPackageDetails());
-                if(savedDetails  != null){
                     return ResponseEntity.ok("Package and details created successfully");
-                }else{
-                    packageRepository.delete(savedPackage);
-                    return  ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Failed to create package Details");
+                } else {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found");
                 }
-
-            }
-            else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Failed to create package and details");
             }
         } catch (Exception e) {
             // Log the error
@@ -63,6 +84,7 @@ public class PackageController {
                     .body("An unexpected error occurred");
         }
     }
+
 
     @PutMapping("/edit/{id}")
     public ResponseEntity<String> editPackageDetails(@PathVariable("id") Long id,@RequestBody PackageDetails updatedDetails){
@@ -76,6 +98,7 @@ public class PackageController {
                 existingDetails.setSenderAddress(updatedDetails.getSenderAddress());
                 existingDetails.setSenderState(updatedDetails.getSenderState());
                 existingDetails.setSenderPincode(updatedDetails.getSenderPincode());
+                existingDetails.setSenderEmail(updatedDetails.getSenderEmail());
                 existingDetails.setSenderMobileNumber(updatedDetails.getSenderMobileNumber());
                 existingDetails.setReceiverName(updatedDetails.getReceiverName());
                 existingDetails.setReceiverEmail(updatedDetails.getReceiverEmail());

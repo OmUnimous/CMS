@@ -4,6 +4,16 @@ import com.cms.entity.PackageDetails;
 import com.cms.entity.PackageEntity;
 
 public class PackageCreationRequest {
+    private long accountId;
+
+    public long getAccountId() {
+        return accountId;
+    }
+
+    public void setAccountId(long accountId) {
+        this.accountId = accountId;
+    }
+
     private PackageEntity packageEntity;
     private PackageDetails packageDetails;
 

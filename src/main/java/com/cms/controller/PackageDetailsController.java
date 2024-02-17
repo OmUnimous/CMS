@@ -7,31 +7,26 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
+
 @RestController
 @CrossOrigin
 @RequestMapping("/user")
 public class PackageDetailsController {
     @Autowired
     private PackageDetailsRepository packageDetailsRepository;
-    @PostMapping("/bookPackageDetails")
-    public ResponseEntity<String> bookPackageDetails(@RequestBody PackageDetails packageDetails){
-        try{
-            if(packageDetails == null){
-                return ResponseEntity.badRequest().body("Invalid Package Details");
+
+    @GetMapping("/details/{id}")
+    public ResponseEntity<PackageDetails> getPackageDetails(@PathVariable Long id) {
+        try {
+            Optional<PackageDetails> packageDetails = packageDetailsRepository.findById(id);
+            if (packageDetails.isEmpty()) {
+                return ResponseEntity.notFound().build();
             }
-            PackageDetails savePackageDetails = packageDetailsRepository.save(packageDetails);
-            if(savePackageDetails != null){
-                return ResponseEntity.ok("Package Deatils Saved Successfully");
-            }else{
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Failed to save package details");
-            }
-            }catch(Exception e){
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("An Unexpected Error Occured");
+            return ResponseEntity.ok(packageDetails.get());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
-
 }

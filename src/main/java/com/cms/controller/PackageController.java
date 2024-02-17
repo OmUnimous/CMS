@@ -154,19 +154,7 @@ public class PackageController {
         }
     }
 
-    @GetMapping("/details/{id}")
-    public ResponseEntity<PackageDetails> getPackageDetails(@PathVariable Long id){
-        try{
-            Optional<PackageDetails> packageDetails = packageDetailsRepository.findById(id);
-            if(packageDetails.isEmpty()){
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.ok(packageDetails.get());
 
-        }catch(Exception e){
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
-        }
-    }
 }
 
 

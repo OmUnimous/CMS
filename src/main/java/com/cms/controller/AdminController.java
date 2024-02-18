@@ -37,12 +37,20 @@ public class AdminController {
             }
 
             PackageEntity packageEntity = optionalPackage.get();
+            System.out.println("Fetched Package Data:");
+            System.out.println("Tracking Number: " + packageEntity.getTrackingNumber());
+            System.out.println("Current Status: " + packageEntity.getStatus());
             try {
-                PackageEntity.PackageStatus status = PackageEntity.PackageStatus.valueOf(newStatus);
-                packageEntity.setStatus(status);
+                System.out.println("-----------------");
+//                PackageEntity.PackageStatus status = PackageEntity.PackageStatus.valueOf(newStatus);
+//                packageEntity.setStatus(status);
+                packageEntity.setStatus(PackageEntity.PackageStatus.valueOf(newStatus));
+
+
                 packageRepository.save(packageEntity);
                 return ResponseEntity.ok("Package status updated successfully");
             } catch (IllegalArgumentException e) {
+                e.printStackTrace();
                 return ResponseEntity.badRequest().body("Invalid package status: " + newStatus);
             }
         } catch (Exception e) {

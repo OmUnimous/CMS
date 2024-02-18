@@ -1,7 +1,10 @@
 package com.cms.controller;
 
+import com.cms.dao.PackageDetailsRepository;
 import com.cms.dao.PackageRepository;
 import com.cms.entity.PackageEntity;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +19,10 @@ import java.util.Optional;
 public class AdminController {
     @Autowired
     private PackageRepository packageRepository;
+
+    @Autowired
+    private PackageDetailsRepository packageDetailsRepository;
+
     @PostMapping("/packages")
     public ResponseEntity<List<PackageEntity>> findAllPackages() {
         try {
@@ -28,27 +35,27 @@ public class AdminController {
 
     @PostMapping("/packages/status/{id}")
     public ResponseEntity<String> updatePackageStatus(@PathVariable Long id, @RequestBody String newStatus) {
-        System.out.println(newStatus);
+
         try {
-            //String newStatus = requestBody.get("newStatus");
+
             Optional<PackageEntity> optionalPackage = packageRepository.findById(id);
             if (optionalPackage.isEmpty()) {
                 return ResponseEntity.notFound().build();
             }
 
             PackageEntity packageEntity = optionalPackage.get();
-            System.out.println("Fetched Package Data:");
-            System.out.println("Tracking Number: " + packageEntity.getTrackingNumber());
-            System.out.println("Current Status: " + packageEntity.getStatus());
             try {
-                System.out.println("-----------------");
-//                PackageEntity.PackageStatus status = PackageEntity.PackageStatus.valueOf(newStatus);
-//                packageEntity.setStatus(status);
-                packageEntity.setStatus(PackageEntity.PackageStatus.valueOf(newStatus));
-
-
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode jsonNode = objectMapper.readTree(newStatus);
+                String statusValue = jsonNode.get("newStatus").asText();
+                PackageEntity.PackageStatus status = PackageEntity.PackageStatus.valueOf(statusValue);
+                if (packageEntity.getStatus() == status) {
+                    return ResponseEntity.status(HttpStatus.OK).body("Status is already updated.");
+                }
+                packageEntity.setStatus(status);
                 packageRepository.save(packageEntity);
                 return ResponseEntity.ok("Package status updated successfully");
+
             } catch (IllegalArgumentException e) {
                 e.printStackTrace();
                 return ResponseEntity.badRequest().body("Invalid package status: " + newStatus);
@@ -58,4 +65,29 @@ public class AdminController {
         }
     }
 
+    @GetMapping("/delete/{id}")
+    public ResponseEntity<String> delete(@PathVariable("id") Long id){
+        try {
+            if(id == null){
+                return ResponseEntity.badRequest().body("Invalid Input Data");
+            }
+            System.out.println(id);
+            Optional<PackageEntity> deletePackage = packageRepository.findById(id);
+            packageRepository.deleteById(id);
+            if(deletePackage.isPresent()){
+                PackageEntity packageEntity = deletePackage.get();
+                if(packageEntity.getPackageDetails() != null){
+                    packageEntity.getPackageDetails().setPackageEntity(null);
+                    packageDetailsRepository.delete(packageEntity.getPackageDetails());
+                }
+                packageRepository.deleteById(id);
+                return ResponseEntity.ok("Package Deleted Successfully");
+            }
+            return ResponseEntity.ok("Package deleted successfully");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("An unexpected error occurred while deleting the package");
+        }
+    }
 }

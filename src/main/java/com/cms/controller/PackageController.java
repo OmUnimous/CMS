@@ -77,6 +77,7 @@ public class PackageController {
     }
 
 
+
     @PostMapping("/edit/{id}")
     public ResponseEntity<String> editPackageDetails(@PathVariable("id") Long id,@RequestBody PackageDetails updatedDetails){
 

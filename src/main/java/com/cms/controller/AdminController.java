@@ -1,8 +1,11 @@
 package com.cms.controller;
 
+import com.cms.dao.AccountRepository;
 import com.cms.dao.PackageDetailsRepository;
 import com.cms.dao.PackageRepository;
+import com.cms.entity.Account;
 import com.cms.entity.PackageEntity;
+import com.cms.entity.Role;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,8 @@ public class AdminController {
     @Autowired
     private PackageDetailsRepository packageDetailsRepository;
 
+    @Autowired
+    private AccountRepository accountRepository;
     @PostMapping("/packages")
     public ResponseEntity<List<PackageEntity>> findAllPackages() {
         try {
@@ -90,4 +95,17 @@ public class AdminController {
                     .body("An unexpected error occurred while deleting the package");
         }
     }
+
+    @PostMapping("/allUsers")
+    public ResponseEntity<List<Account>> allAccounts(){
+        try{
+            List<Account> accounts = accountRepository.findAll();
+            return ResponseEntity.ok(accounts);
+        }catch(Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+
+
 }
